@@ -15,6 +15,7 @@ typedef struct {
 	int fileCount;
 	char currentPath[MAX_CHAR_PATH];
 	int selectedIndex;
+	float scrollOffset;
 	Rectangle panelRectangle;
 } FileBrowser;
 
