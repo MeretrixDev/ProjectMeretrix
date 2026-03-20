@@ -17,6 +17,9 @@ typedef struct {
 	int selectedIndex;
 	float scrollOffset;
 	Rectangle panelRectangle;
+	float currentY;
+	float targetY;
+	int isCollapsed;
 } FileBrowser;
 
 void FileBrowser_LoadDirectory(FileBrowser* fb, const char* path);

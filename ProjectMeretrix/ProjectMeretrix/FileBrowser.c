@@ -51,6 +51,9 @@ void FileBrowser_LoadDirectory(FileBrowser* fb, const char* path)
 
 void FileBrowser_Init(FileBrowser* fb, const char* startPath, Rectangle rect)
 {
+	fb->currentY = rect.y;
+	fb->targetY = rect.y;
+	fb->isCollapsed = 0;
 	fb->scrollOffset = 0;
 	fb->selectedIndex = -1;
 	fb->panelRectangle = rect;
@@ -59,8 +62,8 @@ void FileBrowser_Init(FileBrowser* fb, const char* startPath, Rectangle rect)
 
 void FileBrowser_Update(FileBrowser* fb)
 {
-	Rectangle backBtn = { fb->panelRectangle.x + fb->panelRectangle.width - 60,
-					 fb->panelRectangle.y + 4, 54, 20 };
+	Rectangle backBtn = { fb->panelRectangle.x + fb->panelRectangle.width - 60, fb->panelRectangle.y + 4, 54, 20 };
+	Rectangle toggleBtn = { fb->panelRectangle.x + fb->panelRectangle.width / 2 - 20, fb->currentY - 20, 40, 20 };
 	if (CheckCollisionPointRec(GetMousePosition(), fb->panelRectangle))
 	{
 		float wheel = GetMouseWheelMove();
@@ -70,10 +73,25 @@ void FileBrowser_Update(FileBrowser* fb)
 			if (fb->scrollOffset < 0) fb->scrollOffset = 0;
 		}
 	}
-
-	if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+	Vector2 mouse = GetMousePosition();
+	if (CheckCollisionPointRec(mouse, toggleBtn) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 	{
-		Vector2 mouse = GetMousePosition();
+		if (fb->isCollapsed)
+		{
+			fb->targetY = fb->panelRectangle.y;
+			fb->isCollapsed = 0;
+		}
+		else
+		{
+			fb->targetY = GetScreenHeight();
+			fb->isCollapsed = 1;
+		}
+		return;
+	}
+	fb->currentY += (fb->targetY - fb->currentY) * 8.0f * GetFrameTime();
+
+	if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !fb->isCollapsed)
+	{
 		if (CheckCollisionPointRec(mouse, fb->panelRectangle))
 		{
 			int col = (int)(mouse.x - fb->panelRectangle.x - ICON_PADDING) / (ICON_SIZE + ICON_PADDING);
@@ -119,24 +137,26 @@ void FileBrowser_Update(FileBrowser* fb)
 void FileBrowser_Draw(FileBrowser* fb)
 {
 	DrawRectangleRec(fb->panelRectangle, PANEL_COLOR);
-	DrawRectangle(fb->panelRectangle.x, fb->panelRectangle.y, fb->panelRectangle.width, 28, HEADER_COLOR);
-	DrawText("Project", fb->panelRectangle.x + 8, fb->panelRectangle.y + 6, 16, WHITE);
-	DrawText(fb->currentPath, fb->panelRectangle.x + 80, fb->panelRectangle.y + 8, 12, GRAY);
+	DrawRectangle(fb->panelRectangle.x, fb->currentY, fb->panelRectangle.width, 28, HEADER_COLOR);
+	DrawText("Project", fb->panelRectangle.x + 8, fb->currentY + 6, 16, WHITE);
+	DrawText(fb->currentPath, fb->panelRectangle.x + 80, fb->currentY + 8, 12, GRAY);
 
-	Rectangle backBtn = { fb->panelRectangle.x + fb->panelRectangle.width - 60,
-						fb->panelRectangle.y + 4, 54, 20 };
+	Rectangle backBtn = { fb->panelRectangle.x + fb->panelRectangle.width - 60, fb->currentY + 4, 54, 20 };
+	Rectangle toggleBtn = { fb->panelRectangle.x + fb->panelRectangle.width / 2 - 20, fb->currentY - 20, 40, 20 };
 	DrawRectangleRec(backBtn, (Color) { 60, 60, 60, 255 });
 	DrawText("< Back", backBtn.x + 4, backBtn.y + 4, 12, WHITE);
+	DrawRectangleRec(toggleBtn, (Color) { 60, 60, 60, 255 });
+	DrawText(fb->isCollapsed ? "^" : "v", toggleBtn.x + 16, toggleBtn.y + 4, 14, WHITE);
 
 	int cols = (int)(fb->panelRectangle.width) / (ICON_SIZE + ICON_PADDING);
 
-	BeginScissorMode(fb->panelRectangle.x, fb->panelRectangle.y +28, fb->panelRectangle.width, fb->panelRectangle.height -28);
+	BeginScissorMode(fb->panelRectangle.x, fb->currentY + 28, fb->panelRectangle.width, fb->panelRectangle.height -28);
 	for (int i = 0; i < fb->fileCount; i++) {
 		int col = i % cols;
 		int row = i / cols;
 
 		float x = fb->panelRectangle.x + col * (ICON_SIZE + ICON_PADDING) + ICON_PADDING;
-		float y = fb->panelRectangle.y + 32 + row * (ICON_SIZE + ICON_PADDING + LABEL_HEIGHT) - fb->scrollOffset;
+		float y = fb->currentY + 32 + row * (ICON_SIZE + ICON_PADDING + LABEL_HEIGHT) - fb->scrollOffset;
 
 		if (i == fb->selectedIndex) {
 			DrawRectangle(x - 4, y - 4, ICON_SIZE + 8,
@@ -167,5 +187,5 @@ void FileBrowser_Draw(FileBrowser* fb)
 		DrawText(displayName, textX, y + ICON_SIZE + 2, 10, WHITE);
 	}
 	EndScissorMode();
-	DrawRectangleLinesEx(fb->panelRectangle, 1, (Color) { 60, 60, 60, 255 });
+	DrawRectangleLinesEx((Rectangle) {fb->panelRectangle.x, fb->currentY, fb->panelRectangle.width, fb->panelRectangle.height}, 1, (Color) { 60, 60, 60, 255 });
 }

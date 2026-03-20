@@ -131,9 +131,11 @@
   <ItemGroup>
     <ClCompile Include="FileBrowser.c" />
     <ClCompile Include="MainScript.c" />
+    <ClCompile Include="Menu.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FileBrowser.h" />
+    <ClInclude Include="Menu.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
